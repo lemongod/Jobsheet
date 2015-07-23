@@ -1,0 +1,21 @@
+<head>
+  <title>Jobsheet</title>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>List</h1>
+    </header>
+
+    <u1>
+        {{#each tasks}}
+          {{> task}}
+        {{/each}}
+    </u1>
+  </div>
+</body>
+
+<template name="task">
+  <li>{{text}}  <button>Click Me</button></li>
+</template>
