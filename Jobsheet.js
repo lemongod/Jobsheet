@@ -2,18 +2,13 @@ Tasks = new Mongo.Collection("tasks");
 
 if (Meteor.isServer){
   Meteor.publish("tasks", function(){
-    return Tasks.find({
-      $or:[
-        {private:{ $ne: true}},
-        {owner: this.userId}
-      ]
-    });
+    return Tasks.find();
   });
 }
 
 if (Meteor.isClient){
-
   Meteor.subscribe("tasks");
+
   Template.body.helpers({
     tasks: function(){
       if (Session.get("hideCompleted")) {
@@ -76,7 +71,7 @@ Meteor.methods({
   addTask: function(text){
     //make sure user logged in
     if (!Meteor.userId()){
-      throw new Meteor.error("not-authorized");
+      throw new Meteor.Error("not-authorized");
     }
 
     Tasks.insert({
@@ -87,9 +82,19 @@ Meteor.methods({
     });
   },
   deleteTask: function(taskId){
+    var task = Tasks.findOne(taskId);
+    if (task.owner() !== Meteor.userId() && task.private)
+    {
+      throw new Meteor.Error("not-authorized");
+    }
     Tasks.remove(taskId);
   },
   setChecked: function(taskId, setChecked){
+    var task = Tasks.findOne(taskId);
+    if (task.owner() !== Meteor.userId() && task.private)
+    {
+      throw new Meteor.Error("not-authorized");
+    }
     Tasks.update(taskId, {$set: {checked: setChecked}});
   },
   setPrivate: function(taskId, setToPrivate){
