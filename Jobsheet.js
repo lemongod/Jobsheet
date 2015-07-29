@@ -1,39 +1,44 @@
-Tasks = new Mongo.Collection("tasks");
+Jobs = new Mongo.Collection("jobs");
 
 if (Meteor.isServer){
-  Meteor.publish("tasks", function(){
-    return Tasks.find();
+  Meteor.publish("jobs", function(){
+    return Jobs.find({
+      $or: [
+        {private: {$ne:true}},
+        { owner: this.userId}
+      ]
+    });
   });
 }
 
 if (Meteor.isClient){
-  Meteor.subscribe("tasks");
+  Meteor.subscribe("jobs");
 
   Template.body.helpers({
-    tasks: function(){
+    jobs: function(){
       if (Session.get("hideCompleted")) {
         // If hide completed is checked, filter tasks
-        return Tasks.find({checked: {$ne: true}}, {sort: {createdAt: -1}});
+        return Jobs.find({checked: {$ne: true}}, {sort: {createdAt: -1}});
       }
       else{
-        return Tasks.find({}, {sort:{createdAt: -1}})
+        return Jobs.find({}, {sort:{createdAt: -1}})
       }
     },
     hideCompleted: function(){
       return Session.get("hideCompleted");
     },
     incompleteCount: function(){
-      return Tasks.find({checked: {$ne: true}}).count();
+      return Jobs.find({checked: {$ne: true}}).count();
     }
   });
 
   Template.body.events({
-    "submit .new-task": function(event){
+    "submit .new-job": function(event){
       event.preventDefault(); //prevents default browser form submissions
 
       var text = event.target.text.value;
 
-      Meteor.call("addTask", text);
+      Meteor.call("addJob", text);
 
       event.target.text.value = "";
     },
@@ -43,21 +48,21 @@ if (Meteor.isClient){
     }
   });
 
-  Template.task.helpers({
+  Template.job.helpers({
     isOwner: function(){
-      return this.owner() === Meteor.userId();
+      return this.owner === Meteor.userId();
     }
   });
 
-  Template.task.events({
+  Template.job.events({
     "click .toggle-checked": function(){
       Meteor.call("setChecked", this._id, !this.checked); //set checked to opposite of its current value
     },
     "click .delete": function(){
-      Meteor.call("deleteTask", this._id)
+      Meteor.call("deleteJob", this._id)
     },
     "click .toggle-private": function(){
-      Meteor.call("setPrivate", this._id, !this.private);
+      Meteor.call("setPrivate", this._id, ! this.private);
     }
   });
 
@@ -68,42 +73,42 @@ if (Meteor.isClient){
 }
 
 Meteor.methods({
-  addTask: function(text){
+  addJob: function(text){
     //make sure user logged in
     if (!Meteor.userId()){
       throw new Meteor.Error("not-authorized");
     }
 
-    Tasks.insert({
+    Jobs.insert({
       text:text,
       createdAt: new Date(),
       owner: Meteor.userId(),
       username: Meteor.user().username
     });
   },
-  deleteTask: function(taskId){
-    var task = Tasks.findOne(taskId);
-    if (task.owner() !== Meteor.userId() && task.private)
-    {
+  deleteJob: function(taskId){
+    var j = Jobs.findOne(taskId);
+    if (j.private && j.owner !== Meteor.userId()) {
       throw new Meteor.Error("not-authorized");
     }
-    Tasks.remove(taskId);
+    else if(j.owner === Meteor.userId()){
+       Jobs.remove(taskId);
+    }
   },
   setChecked: function(taskId, setChecked){
-    var task = Tasks.findOne(taskId);
-    if (task.owner() !== Meteor.userId() && task.private)
+    var j = Jobs.findOne(taskId);
+    if (j.private && j.owner !== Meteor.userId() )
     {
       throw new Meteor.Error("not-authorized");
     }
-    Tasks.update(taskId, {$set: {checked: setChecked}});
+    Jobs.update(taskId, {$set: {checked: setChecked}});
   },
   setPrivate: function(taskId, setToPrivate){
-    var task = Tasks.findOne(taskId);
-    if (task.owner() !== Meteor.userId()){
+    var j = Jobs.findOne(taskId);
+    if (j.owner !== Meteor.userId()){
       throw new Meteor.Error("not-authorized");
     }
-
-    Tasks.update(taskId, {$set:{private:setToPrivate}});
+    Jobs.update(taskId, {$set:{private:setToPrivate}});
   }
 
 });

@@ -5,32 +5,33 @@
 <body>
   <div class="container">
     <header>
-      <h1>List ({{incompleteCount}})</h1>
+      <h1>Job List ({{incompleteCount}})</h1>
 
       <label class="hide-completed">
         <input type="checkbox" checked="{{hideCompleted}}" />
-          Hide Completed Tasks
+          Hide Completed Jobs
       </label>
 
       {{>loginButtons}}
 
       {{#if currentUser}}
-        <form class="new-task">
+        <form class="new-job">
           <input type="text" name="text" placeholder="Type to add new jobs" />
         </form>
       {{/if}}
 
     </header>
-
     <u1>
-        {{#each tasks}}
-          {{> task}}
+        {{#each jobs}}
+            {{> job}}
         {{/each}}
     </u1>
+
+    {{>sAlert}}
   </div>
 </body>
 
-<template name="task">
+<template name="job">
   <li class="{{#if checked}} checked {{/if}} {{#if private}} private {{/if}}">
 
     <button class="delete">
@@ -52,6 +53,15 @@
     <span class="text">
       <strong> {{username}} </strong>
       {{text}}
+      {{createdAt}}
     </span>
+
+    <!-- <select id="status-select">
+      <option disabled="disabled" selected="selected" Please Select </option>
+        {{#each categories}}
+          <option value="{{this}}"> {{this}} </option>
+        {{/each}}
+    </select> -->
   </li>
+
 </template>
